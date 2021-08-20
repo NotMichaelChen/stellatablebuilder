@@ -45,7 +45,7 @@ func getHeaderJson*(t: TableGenerator, clearLevel: ClearLevel): JsonNode =
     {
       "name": fmt"{t.tabletype.title} {clearLevel.title}",
       "symbol": fmt"{clearLevel.symbol}-{t.tabletype.symbol}",
-      "data_url": urlmap.getUrl(clearLevel, t.tableType),
+      "data_url": urlmap.getDataUrl(clearLevel, t.tableType),
       "level_order": t.getLevelOrder(clearLevel)
     }
 
