@@ -8,9 +8,9 @@ suite "TableGenerator.getDataJson":
       ChartInfo(md5: md5, title: title, easy: some(rating), normal: none(float), hard: none(float), fullcombo: none(float))
 
     let testChartInfos = @[
-      makeMockChartInfo("md5-1", "title1", 0.1),
+      makeMockChartInfo("md5-1", "Title1", 0.1),
       makeMockChartInfo("md5-2", "title2", 0.1),
-      makeMockChartInfo("md5-3", "title3", 0.05),
+      makeMockChartInfo("md5-3", "Title3", 0.05),
       makeMockChartInfo("md5-4", "title4", 1.3),
     ]
 
@@ -21,7 +21,7 @@ suite "TableGenerator.getDataJson":
     let expectedDataJson = %*[
       {
         "md5": "md5-1",
-        "title": "title1",
+        "title": "Title1",
         "level": "0.00...0.50"
       },
       {
@@ -31,7 +31,7 @@ suite "TableGenerator.getDataJson":
       },
       {
         "md5": "md5-3",
-        "title": "title3",
+        "title": "Title3",
         "level": "0.00...0.50"
       },
       {

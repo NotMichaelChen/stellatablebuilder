@@ -4,6 +4,7 @@ import options
 import sugar
 import math
 import sequtils
+import strutils
 import algorithm
 import sets
 
@@ -60,7 +61,7 @@ func getDataJson*(t: TableGenerator, clearLevel: ClearLevel): JsonNode =
   tableEntries.sort(proc(lhs, rhs: TableEntry): int =
     result = cmp(lhs.levelLowerBound, rhs.levelLowerBound)
     if result == 0:
-      result = cmp(lhs.title, rhs.title)
+      result = cmpIgnoreCase(lhs.title, rhs.title)
   )
 
   # TODO: hacky - how to avoid serializing levelLowerBound?
