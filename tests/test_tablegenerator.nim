@@ -2,6 +2,47 @@ include tablegenerator
 
 import unittest
 
+suite "TableGenerator.getDataJson":
+  test "should sort charts by level category, then by title":
+    func makeMockChartInfo(md5: string, title: string, rating: float): ChartInfo =
+      ChartInfo(md5: md5, title: title, easy: some(rating), normal: none(float), hard: none(float), fullcombo: none(float))
+
+    let testChartInfos = @[
+      makeMockChartInfo("md5-1", "title1", 0.1),
+      makeMockChartInfo("md5-2", "title2", 0.1),
+      makeMockChartInfo("md5-3", "title3", 0.05),
+      makeMockChartInfo("md5-4", "title4", 1.3),
+    ]
+
+    let tableGenerator = TableGenerator(chartInfos: testChartInfos, tableType: Stella)
+
+    let dataJson = tableGenerator.getDataJson(Easy)
+
+    let expectedDataJson = %*[
+      {
+        "md5": "md5-1",
+        "title": "title1",
+        "level": "0.00...0.50"
+      },
+      {
+        "md5": "md5-2",
+        "title": "title2",
+        "level": "0.00...0.50"
+      },
+      {
+        "md5": "md5-3",
+        "title": "title3",
+        "level": "0.00...0.50"
+      },
+      {
+        "md5": "md5-4",
+        "title": "title4",
+        "level": "1.00...1.50"
+      }
+    ]
+
+    check(dataJson == expectedDataJson)
+
 suite "TableGenerator":
   test "makeLevelPair":
     check(makeLevelPair(0) == "0.00...0.50")
@@ -27,10 +68,11 @@ suite "TableGenerator":
 
     let levelOrder = tableGenerator.getLevelOrder(Easy)
 
-    require(levelOrder.len == 6)
-    check(levelOrder[0] == "-0.50...0.00")
-    check(levelOrder[1] == "0.00...0.50")
-    check(levelOrder[2] == "0.50...1.00")
-    check(levelOrder[3] == "1.00...1.50")
-    check(levelOrder[4] == "1.50...2.00")
-    check(levelOrder[5] == "-")
+    check(levelOrder == @[
+      "-0.50...0.00",
+      "0.00...0.50",
+      "0.50...1.00",
+      "1.00...1.50",
+      "1.50...2.00",
+      "-"
+    ])

@@ -17,27 +17,23 @@ type TableEntry = object
   md5: string
   title: string
   level: string
-  rawLevel: float
+  levelLowerBound: float
 
 type TableGenerator* = object
   chartInfos: seq[ChartInfo]
   tableType: TableType
 
+proc filterChartInfos(chartInfos: seq[ChartInfo], tableType: TableType): seq[ChartInfo]
 func makeLevelPair(lower: float): string
 func getLevelOrder(t: TableGenerator, clearLevel: ClearLevel): seq[string]
 func levelToCategory(level: Option[float]): string
 
+# TODO: instead of taking a seq[ChartInfo] and TableType, can this take a seq of md5, title, rating instead?
 proc initTableGenerator*(chartInfos: seq[ChartInfo], tableType: TableType): TableGenerator =
   doAssert(tableType in DifficultyEstimateTableTypes, fmt"Invalid table type for table generator: {tableType}")
 
-  let tableInfo = initTableInfo(fmt"https://stellabms.xyz/{tableType.urlsymbol}/table.html")
+  let filteredChartInfos = filterChartInfos(chartInfos, tableType)
 
-  var chartHashes: HashSet[string]
-  for chart in tableInfo.dataJson.getElems:
-    chartHashes.incl(chart["md5"].getStr())
-
-  let filteredChartInfos = chartInfos.filter(chartInfo => chartInfo.md5 in chartHashes)
-    
   TableGenerator(chartInfos: filteredChartInfos, tableType: tableType)
 
 func getHeaderJson*(t: TableGenerator, clearLevel: ClearLevel): JsonNode =
@@ -57,17 +53,17 @@ func getDataJson*(t: TableGenerator, clearLevel: ClearLevel): JsonNode =
         md5: chartInfo.md5,
         title: chartInfo.title,
         level: levelToCategory(rawLevel),
-        rawLevel: rawLevel.get(Inf)
+        levelLowerBound: rawLevel.map(l => floor(l*2.0) / 2.0).get(Inf)
       )
     )
 
   tableEntries.sort(proc(lhs, rhs: TableEntry): int =
-    if lhs.rawLevel < rhs.rawLevel: -1
-    elif lhs.rawLevel > rhs.rawLevel: 1
-    else: 0
+    result = cmp(lhs.levelLowerBound, rhs.levelLowerBound)
+    if result == 0:
+      result = cmp(lhs.title, rhs.title)
   )
 
-  # TODO: hacky - how to avoid serializing rawLevel?
+  # TODO: hacky - how to avoid serializing levelLowerBound?
   type TableEntryJson = object
     md5: string
     title: string
@@ -89,6 +85,15 @@ func getLevelOrder(t: TableGenerator, clearLevel: ClearLevel): seq[string] =
   let highestDoubled = int(ceil(difficultyList[difficultyList.maxIndex] * 2))
 
   (lowestDoubled..<highestDoubled).toSeq.map(i => makeLevelPair(float(i)/2.0)) & "-"
+
+proc filterChartInfos(chartInfos: seq[ChartInfo], tableType: TableType): seq[ChartInfo] =
+  let tableInfo = initTableInfo(fmt"https://stellabms.xyz/{tableType.urlsymbol}/table.html")
+
+  var chartHashes: HashSet[string]
+  for chart in tableInfo.dataJson.getElems:
+    chartHashes.incl(chart["md5"].getStr())
+
+  return chartInfos.filter(chartInfo => chartInfo.md5 in chartHashes)
 
 func makeLevelPair(lower: float): string =
   let upper = lower + 0.5
