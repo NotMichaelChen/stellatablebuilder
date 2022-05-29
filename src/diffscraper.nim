@@ -2,13 +2,32 @@ import httpclient
 import json
 import strutils
 import options
+import sequtils
 import sugar
 import strformat
+import tables
+
+import bmslib/bmstable/tableinfo
 
 import chartinfo
 import tabletype as tt
 
-proc scrapeDifficultyEstimate*(tableType: TableType): seq[ChartInfo] =
+type RawChartInfo = object
+  md5: string
+  title: string
+  easy: Option[float]
+  normal: Option[float]
+  hard: Option[float]
+  fullcombo: Option[float]
+
+proc scrapeDifficultyEstimate*(tableType: TableType): seq[RawChartInfo]
+proc annotateLevel(rawChartInfos: seq[RawChartInfo], tableType: TableType): seq[ChartInfo]
+
+proc ingestChartInfos*(tableType: TableType): seq[ChartInfo] =
+  let rawChartInfos = scrapeDifficultyEstimate(tableType)
+  return annotateLevel(rawChartInfos, tableType)
+
+proc scrapeDifficultyEstimate(tableType: TableType): seq[RawChartInfo] =
   doAssert(tableType in DifficultyEstimateTableTypes, fmt"Invalid table type to scrape: {tableType.title}")
 
   let client = newHttpClient()
@@ -16,7 +35,7 @@ proc scrapeDifficultyEstimate*(tableType: TableType): seq[ChartInfo] =
   client.headers = newHttpHeaders({"Content-Type": "application/json"})
 
   var pageNumber = 1
-  var chartInfoSeq: seq[ChartInfo]
+  var chartInfoSeq: seq[RawChartInfo]
 
   #TODO: Decide whether or not this should be refactored
   while true:
@@ -45,7 +64,7 @@ proc scrapeDifficultyEstimate*(tableType: TableType): seq[ChartInfo] =
       let fc = option(chartInfo{"fc"}).map((value) => value.getFloat)
 
       chartInfoSeq.add(
-        ChartInfo(
+        RawChartInfo(
           md5: chartInfo["md5"].getStr,
           title: chartInfo["title"].getStr,
           easy: ec,
@@ -58,3 +77,26 @@ proc scrapeDifficultyEstimate*(tableType: TableType): seq[ChartInfo] =
     pageNumber += 1
 
   return chartInfoSeq
+
+proc annotateLevel(rawChartInfos: seq[RawChartInfo], tableType: TableType): seq[ChartInfo] =
+  let stellaTableInfo = initTableInfo(fmt"https://stellabms.xyz/{tableType.urlSymbol}/table.html")
+
+  let hashToLevelMap = stellaTableInfo
+    .dataJson
+    .getElems
+    .map((chartObj) => (
+      (chartObj["md5"].getStr, chartObj["level"].getStr)
+    ))
+    .toTable
+
+  rawChartInfos
+    .map(rawChartInfo => ChartInfo(
+      md5: rawChartInfo.md5,
+      title: rawChartInfo.title,
+      level: hashToLevelMap.getOrDefault(rawChartInfo.md5),
+      easy: rawChartInfo.easy,
+      normal: rawChartInfo.normal,
+      hard: rawChartInfo.hard,
+      fullcombo: rawChartInfo.fullcombo
+    ))
+    .filter(chartInfo => chartInfo.level != "")

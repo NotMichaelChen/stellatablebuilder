@@ -48,7 +48,7 @@ proc generateTable(tableType: TableType, programOpts: ProgramOptions) =
     generateCombinedTable(tableType, programOpts)
 
 proc generateDifficultyEstimateTables(tableType: TableType, programOpts: ProgramOptions) =
-  let chartList = scrapeDifficultyEstimate(tableType)
+  let chartList = ingestChartInfos(tableType)
   let tableGenerator = initTableGenerator(chartList, tableType)
 
   for clearlevel in AllClearLevel:

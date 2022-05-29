@@ -10,6 +10,6 @@ bin           = @["stellatablebuilder"]
 
 # Dependencies
 
-requires "nim >= 1.2.0"
-requires "https://github.com/NotMichaelChen/bmslib#5aa4ca6af8eb87b88a62e0ebc3b2804a419c1893"
-requires "simpleparseopt 1.1.0"
+requires "nim >= 1.6.0"
+requires "https://github.com/NotMichaelChen/bmslib#1403a4052d5e9f8f58bb287859de139ab93e4d50"
+requires "simpleparseopt 1.1.1"

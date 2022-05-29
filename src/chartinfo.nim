@@ -5,6 +5,7 @@ import clearlevel
 type ChartInfo* = object
   md5*: string
   title*: string
+  level*: string
   easy*: Option[float]
   normal*: Option[float]
   hard*: Option[float]
